@@ -36,7 +36,6 @@ app.get(`/:token`, (req, res, next) => {
 });
 // Set
 app.post(`/:token`, (req, res, next) => {
-	// TODO (req.body)
 	if (fs.existsSync(path.join(__dirname + `/${req.params.token}`)))
 		fs.mkdirSync(__dirname + `/${req.params.token}`, { recursive: true });
 	let status = 400;
