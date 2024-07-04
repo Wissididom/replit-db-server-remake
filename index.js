@@ -2,6 +2,10 @@ import express from 'express';
 import helmet from 'helmet';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import * as url from 'node:url';
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
+
 const app = express();
 app.use(helmet());
 app.use(express.json());
