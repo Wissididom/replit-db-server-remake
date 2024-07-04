@@ -1,7 +1,7 @@
-const express = require('express');
-const helmet = require('helmet');
-const fs = require('fs');
-const path = require('path');
+import express from 'express';
+import helmet from 'helmet';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 const app = express();
 app.use(helmet());
 app.use(express.json());
