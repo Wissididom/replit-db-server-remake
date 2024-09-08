@@ -7,6 +7,10 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+function validateTableName(tableName) {
+  return /^[a-zA-Z0-9_]+$/g.test(tableName);
+}
+
 let db = await new Promise((resolve, reject) => {
   let db = new sqlite3.Database("./database.db", (err) => {
     if (err) {
@@ -26,9 +30,13 @@ app.get(`/check`, (req, res) => {
 // Get
 app.get(`/:token/:key`, async (req, res) => {
   let rows = await new Promise((resolve, reject) => {
+    if (!validateTableName(req.params.token)) {
+      reject("Invalid table name");
+      return;
+    }
     db.all(
-      "SELECT * FROM ? WHERE key = ?",
-      [req.params.token, req.params.key],
+      `SELECT * FROM '${req.params.token}' WHERE key = ?`,
+      [req.params.key],
       (err, rows) => {
         if (err) {
           reject(err);
@@ -48,7 +56,11 @@ app.get(`/:token/:key`, async (req, res) => {
 // List
 app.get(`/:token`, async (req, res) => {
   let rows = await new Promise((resolve, reject) => {
-    db.all("SELECT * FROM ?", [req.params.token], (err, rows) => {
+    if (!validateTableName(req.params.token)) {
+      reject("Invalid table name");
+      return;
+    }
+    db.all(`SELECT * FROM '${req.params.token}'`, [], (err, rows) => {
       if (err) {
         reject(err);
         return;
@@ -66,8 +78,12 @@ app.get(`/:token`, async (req, res) => {
 // Set
 app.post(`/:token`, async (req, res) => {
   await new Promise((resolve, reject) => {
+    if (!validateTableName(req.params.token)) {
+      reject("Invalid table name");
+      return;
+    }
     db.run(
-      `CREATE TABLE IF NOT EXISTS '${token}' (key TEXT PRIMARY KEY, value TEXT)`,
+      `CREATE TABLE IF NOT EXISTS '${req.params.token}' (key TEXT PRIMARY KEY, value TEXT)`,
       [],
       (err) => {
         if (err) {
@@ -75,7 +91,7 @@ app.post(`/:token`, async (req, res) => {
           reject(err);
           return;
         }
-        console.log(`Successfully created table '${token}'`);
+        console.log(`Successfully created table '${req.params.token}'`);
         resolve();
       },
     );
@@ -84,16 +100,22 @@ app.post(`/:token`, async (req, res) => {
   let keys = Object.keys(req.body);
   for (let i = 0; i < keys.length; i++) {
     await new Promise((resolve, reject) => {
+      if (!validateTableName(req.params.token)) {
+        reject("Invalid table name");
+        return;
+      }
       db.run(
-        `INSERT INTO ? (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
-        [req.params.token, keys[i], req.body[keys[i]]],
+        `INSERT INTO ${req.params.token} (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+        [keys[i], req.body[keys[i]]],
         (err) => {
           if (err) {
             console.error(err.message);
             reject(err);
             return;
           }
-          console.log(`Successfully upserted value '${key}'='${value}'`);
+          console.log(
+            `Successfully upserted value '${keys[i]}'='${req.body[keys[i]]}'`,
+          );
           resolve();
         },
       );
@@ -107,9 +129,13 @@ app.post(`/:token`, async (req, res) => {
 app.delete(`/:token/:key`, async (req, res) => {
   let status = 404;
   let rows = await new Promise((resolve, reject) => {
+    if (!validateTableName(req.params.token)) {
+      reject("Invalid table name");
+      return;
+    }
     db.all(
-      "SELECT * FROM ? WHERE key = ?",
-      [req.params.token, req.params.key],
+      `SELECT * FROM '${req.params.token}' WHERE key = ?`,
+      [req.params.key],
       (err, rows) => {
         if (err) {
           reject(err);
@@ -121,16 +147,20 @@ app.delete(`/:token/:key`, async (req, res) => {
   });
   if (rows.length > 0) {
     await new Promise((resolve, reject) => {
+      if (!validateTableName(req.params.token)) {
+        reject("Invalid table name");
+        return;
+      }
       db.run(
-        `DELETE FROM ? WHERE key = ?`,
-        [req.params.token, req.params.key],
+        `DELETE FROM ${req.params.token} WHERE key = ?`,
+        [req.params.key],
         (err) => {
           if (err) {
             console.error(err.message);
             reject(err);
             return;
           }
-          console.log(`Successfully upserted value '${key}'='${value}'`);
+          console.log(`Successfully deleted '${req.params.key}'`);
           resolve();
         },
       );
@@ -143,6 +173,10 @@ app.delete(`/:token/:key`, async (req, res) => {
 app.use("/", (req, res, next) => {
   res.status(404); // Unknown route
   res.send("Unknown route");
+});
+
+process.on("uncaughtException", (err) => {
+  console.error(err);
 });
 
 app.listen(1337);
