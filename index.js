@@ -141,9 +141,9 @@ app.delete(`/:token/:key`, async (req, res) => {
       );
     });
     status = 204;
-    res.status(status);
-    res.send("");
   }
+  res.status(status);
+  res.send("");
 });
 app.use("/", (req, res, next) => {
   res.status(404); // Unknown route
