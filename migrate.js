@@ -32,7 +32,7 @@ if (fs.existsSync(path.join(__dirname + `/${token}`))) {
   });
   await new Promise((resolve, reject) => {
     db.run(
-      `CREATE TABLE IF NOT EXISTS '${token}' (key TEXT, value TEXT)`,
+      `CREATE TABLE IF NOT EXISTS '${token}' (key TEXT PRIMARY KEY, value TEXT)`,
       [],
       (err) => {
         if (err) {
@@ -52,7 +52,7 @@ if (fs.existsSync(path.join(__dirname + `/${token}`))) {
     );
     await new Promise((resolve, reject) => {
       db.run(
-        `INSERT INTO '${token}' (key, value) VALUES (?, ?)`,
+        `INSERT INTO '${token}' (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
         [key, value],
         (err) => {
           if (err) {
