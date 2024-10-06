@@ -1,4 +1,4 @@
-name: Prettier Formatting
+name: Deno Formatting
 
 on:
   push:
@@ -13,10 +13,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install dependencies
+      - name: Run deno fmt
         run: |
-          npm ci
-      - name: Run prettier
+          deno fmt
+      - name: Run deno lint
         run: |
-          npm run format
-          git --no-pager diff --exit-code --color=never
+          deno lint
